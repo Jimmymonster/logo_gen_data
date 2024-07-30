@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-def random_resize(image, scale_range=(0.5, 1.5)):
+def random_resize(image, scale_range=(0.8, 1.2)):
     scale = np.random.uniform(scale_range[0], scale_range[1])
     new_size = (int(image.width * scale), int(image.height * scale))
     return image.resize(new_size, Image.LANCZOS)
@@ -16,7 +16,7 @@ def resolution_down(image, max_resolution=(800, 800)):
         return image.resize(new_size, Image.LANCZOS)
     return image
 
-def random_perspective(image, max_warp=0.3):
+def random_perspective(image, max_warp=0.2):
     width, height = image.size
     pts1 = np.float32([[0,0], [width-1,0], [0,height-1], [width-1,height-1]])
     pts2 = np.float32([
@@ -35,8 +35,8 @@ def random_rotation(image, angle_range=(-30, 30)):
     return image.rotate(angle, expand=True)
 
 def augment_logo(image):
-    image = random_resize(image)
-    image = resolution_down(image)
+    # image = random_resize(image)
+    # image = resolution_down(image)
     image = random_perspective(image)
     image = random_rotation(image)
     return image

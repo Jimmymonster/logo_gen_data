@@ -26,9 +26,7 @@ if not os.path.exists(os.path.join(output_folder, images_folder)):
     os.makedirs(os.path.join(output_folder, images_folder))
 
 # Load logo
-logo_file = os.listdir(logo_folder)[0]  
-logo_path = os.path.join(logo_folder, logo_file)
-logo = Image.open(logo_path).convert("RGBA")
+logo_files = os.listdir(logo_folder)
 
 
 # Extract frames from video and overlay logo
@@ -39,10 +37,14 @@ def overlay_logo(frame, logo):
     logo_width, logo_height = aug_logo.size
     
     # Random position with padding
-    x_padding = random.randint(10, 20)  # Random padding on x-axis
-    y_padding = random.randint(10, 20)  # Random padding on y-axis
-    random_pos_x = random.randint(0,x_padding)
-    random_pos_y = random.randint(0,y_padding)
+    # x_padding = random.randint(5, 10)  # Random padding on x-axis
+    # y_padding = random.randint(5, 10)  # Random padding on y-axis
+    # random_pos_x = random.randint(0,x_padding)
+    # random_pos_y = random.randint(0,y_padding)
+    x_padding = 0  
+    y_padding = 0  
+    random_pos_x = 0
+    random_pos_y = 0
     x = random.randint(x_padding, frame.shape[1] - logo_width - x_padding)
     y = random.randint(y_padding, frame.shape[0] - logo_height - y_padding)
     
@@ -57,7 +59,7 @@ def overlay_logo(frame, logo):
 # Process video
 cap = cv2.VideoCapture(video_path)
 frame_number = 0
-snapshot_interval = 30  # Capture one frame every 30 frames
+snapshot_interval = 300  # Capture one frame every 30 frames
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -65,6 +67,10 @@ while cap.isOpened():
         break
 
     if frame_number % snapshot_interval == 0:
+        logo_file=logo_files[random.randint(0,len(logo_files)-1)]
+        logo_path = os.path.join(logo_folder, logo_file)
+        logo = Image.open(logo_path).convert("RGBA")
+
         # Overlay logo and save snapshot
         processed_frame, bbox = overlay_logo(frame, logo)
         snapshot_filename = f"frame_{frame_number}.jpg"

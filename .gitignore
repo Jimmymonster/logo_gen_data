@@ -3,3 +3,4 @@ old_images/
 result/
 video/
 output/
+__pycache__/

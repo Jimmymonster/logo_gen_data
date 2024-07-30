@@ -4,6 +4,7 @@ import os
 import random
 from PIL import Image
 import shutil
+from augment import augment_logo
 
 # Paths to your folders
 video_path = 'video/video.mp4'
@@ -25,18 +26,21 @@ if not os.path.exists(os.path.join(output_folder, images_folder)):
     os.makedirs(os.path.join(output_folder, images_folder))
 
 # Load logo
-logo_file = os.listdir(logo_folder)[0]  # Assuming one logo
+logo_file = os.listdir(logo_folder)[0]  
 logo_path = os.path.join(logo_folder, logo_file)
 logo = Image.open(logo_path).convert("RGBA")
-logo_width, logo_height = logo.size
+
 
 # Extract frames from video and overlay logo
 def overlay_logo(frame, logo):
     frame_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).convert("RGBA")
+
+    aug_logo = augment_logo(logo)
+    logo_width, logo_height = aug_logo.size
     
     # Random position with padding
-    x_padding = random.randint(15, 30)  # Random padding on x-axis
-    y_padding = random.randint(15, 30)  # Random padding on y-axis
+    x_padding = random.randint(10, 20)  # Random padding on x-axis
+    y_padding = random.randint(10, 20)  # Random padding on y-axis
     random_pos_x = random.randint(0,x_padding)
     random_pos_y = random.randint(0,y_padding)
     x = random.randint(x_padding, frame.shape[1] - logo_width - x_padding)
@@ -47,7 +51,7 @@ def overlay_logo(frame, logo):
     transparent_frame.paste(frame_pil, (0, 0))
     
     # Overlay the logo
-    transparent_frame.paste(logo, (x, y), logo)
+    transparent_frame.paste(aug_logo, (x, y), aug_logo)
     return cv2.cvtColor(np.array(transparent_frame), cv2.COLOR_RGBA2BGR), (x-random_pos_x, y-random_pos_y, logo_width + x_padding, logo_height + y_padding )
 
 # Process video

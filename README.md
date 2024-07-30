@@ -8,4 +8,4 @@ These folder are resources folder that i didn't commit into git.
 - video/video.mp4
 
 ## rm background
-This is optional to make your logo has transparent background. Just pip install rembg.
+This is optional to make your logo has transparent background. Just pip install rembg. *Note that rembg lib use nvidia gpu* so if you don't have nvidia gpu it won't work!!!

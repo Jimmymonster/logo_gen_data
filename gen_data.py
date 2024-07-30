@@ -11,7 +11,6 @@ video_path = 'video/video.mp4'
 logo_folder = 'logo'
 output_folder = 'output'
 classes_file = 'classes.txt'
-class_list = ['logo']
 labels_folder = 'labels'
 images_folder = 'images'
 
@@ -25,41 +24,66 @@ if not os.path.exists(os.path.join(output_folder, labels_folder)):
 if not os.path.exists(os.path.join(output_folder, images_folder)):
     os.makedirs(os.path.join(output_folder, images_folder))
 
-# Load logo
-logo_files = os.listdir(logo_folder)
+# Load logos from subfolders
+logo_folders = [f.path for f in os.scandir(logo_folder) if f.is_dir()]
+class_list = []
 
+logo_files = []
+for i, folder in enumerate(logo_folders):
+    class_name = os.path.basename(folder)
+    class_list.append(class_name)
+    logo_files.extend([(folder, file) for file in os.listdir(folder) if file.lower().endswith(('.png', '.jpg', '.jpeg'))])
 
-# Extract frames from video and overlay logo
-def overlay_logo(frame, logo):
+# Function to check if a logo overlaps with existing logos
+def is_overlapping(new_bbox, existing_bboxes):
+    nx, ny, nw, nh = new_bbox
+    for (ex, ey, ew, eh) in existing_bboxes:
+        if (nx < ex + ew and nx + nw > ex and ny < ey + eh and ny + nh > ey):
+            return True
+    return False
+
+# Overlay logos on frame
+def overlay_logos(frame, logos, max_logos=3):
     frame_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).convert("RGBA")
+    existing_bboxes = []
+    bboxes = []
+    class_ids = []
 
-    aug_logo = augment_logo(logo)
-    logo_width, logo_height = aug_logo.size
+    for _ in range(min(max_logos, len(logos))):
+        logo_folder, logo_file = random.choice(logo_files)
+        logo_class_id = class_list.index(os.path.basename(logo_folder))
+        logo_path = os.path.join(logo_folder, logo_file)
+        logo = Image.open(logo_path).convert("RGBA")
+        aug_logo = augment_logo(logo)
+        logo_width, logo_height = aug_logo.size
+        
+        x_padding = 0  
+        y_padding = 0  
+        random_pos_x = 0
+        random_pos_y = 0
+        
+        # Try to find a non-overlapping position
+        for _ in range(100):  # Try 100 times to avoid infinite loops
+            x = random.randint(x_padding, frame.shape[1] - logo_width - x_padding)
+            y = random.randint(y_padding, frame.shape[0] - logo_height - y_padding)
+            bbox = (x-random_pos_x, y-random_pos_y, logo_width + x_padding, logo_height + y_padding)
+            
+            if not is_overlapping(bbox, existing_bboxes):
+                existing_bboxes.append(bbox)
+                transparent_frame = Image.new('RGBA', frame_pil.size, (0, 0, 0, 0))
+                transparent_frame.paste(frame_pil, (0, 0))
+                transparent_frame.paste(aug_logo, (x, y), aug_logo)
+                frame_pil = transparent_frame
+                bboxes.append(bbox)
+                class_ids.append(logo_class_id)
+                break
     
-    # Random position with padding
-    # x_padding = random.randint(5, 10)  # Random padding on x-axis
-    # y_padding = random.randint(5, 10)  # Random padding on y-axis
-    # random_pos_x = random.randint(0,x_padding)
-    # random_pos_y = random.randint(0,y_padding)
-    x_padding = 0  
-    y_padding = 0  
-    random_pos_x = 0
-    random_pos_y = 0
-    x = random.randint(x_padding, frame.shape[1] - logo_width - x_padding)
-    y = random.randint(y_padding, frame.shape[0] - logo_height - y_padding)
-    
-    # Create a transparent background
-    transparent_frame = Image.new('RGBA', frame_pil.size, (0, 0, 0, 0))
-    transparent_frame.paste(frame_pil, (0, 0))
-    
-    # Overlay the logo
-    transparent_frame.paste(aug_logo, (x, y), aug_logo)
-    return cv2.cvtColor(np.array(transparent_frame), cv2.COLOR_RGBA2BGR), (x-random_pos_x, y-random_pos_y, logo_width + x_padding, logo_height + y_padding )
+    return cv2.cvtColor(np.array(frame_pil), cv2.COLOR_RGBA2BGR), bboxes, class_ids
 
 # Process video
 cap = cv2.VideoCapture(video_path)
 frame_number = 0
-snapshot_interval = 300  # Capture one frame every 30 frames
+snapshot_interval = 300  # Capture one frame every 300 frames
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -67,12 +91,11 @@ while cap.isOpened():
         break
 
     if frame_number % snapshot_interval == 0:
-        logo_file=logo_files[random.randint(0,len(logo_files)-1)]
-        logo_path = os.path.join(logo_folder, logo_file)
-        logo = Image.open(logo_path).convert("RGBA")
-
-        # Overlay logo and save snapshot
-        processed_frame, bbox = overlay_logo(frame, logo)
+        # Prepare to overlay multiple logos
+        num_logos = random.randint(1, 3)  # Random number of logos per frame, adjust as needed
+        processed_frame, bboxes, class_ids = overlay_logos(frame, logo_files, num_logos)
+        
+        # Save snapshot
         snapshot_filename = f"frame_{frame_number}.jpg"
         snapshot_path = os.path.join(output_folder, images_folder, snapshot_filename)
         cv2.imwrite(snapshot_path, processed_frame)
@@ -81,13 +104,14 @@ while cap.isOpened():
         label_filename = os.path.splitext(snapshot_filename)[0] + '.txt'
         label_path = os.path.join(output_folder, labels_folder, label_filename)
         h, w, _ = frame.shape
-        x_center = (bbox[0] + bbox[2] / 2) / w
-        y_center = (bbox[1] + bbox[3] / 2) / h
-        width = bbox[2] / w
-        height = bbox[3] / h
         
         with open(label_path, 'w') as label_file:
-            label_file.write(f"0 {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")  # Example label
+            for bbox, class_id in zip(bboxes, class_ids):
+                x_center = (bbox[0] + bbox[2] / 2) / w
+                y_center = (bbox[1] + bbox[3] / 2) / h
+                width = bbox[2] / w
+                height = bbox[3] / h
+                label_file.write(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
 
     frame_number += 1
 
@@ -96,6 +120,6 @@ cap.release()
 # Create classes.txt
 with open(os.path.join(output_folder, classes_file), 'w') as class_file:
     for item in class_list:
-        class_file.write(f"{item}\n")  
+        class_file.write(f"{item}\n")
 
 print("Video processing complete. Output saved in the 'output' folder.")

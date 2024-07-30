@@ -96,7 +96,7 @@ while cap.isOpened():
         processed_frame, bboxes, class_ids = overlay_logos(frame, logo_files, num_logos)
         
         # Save snapshot
-        snapshot_filename = f"frame_{frame_number}.jpg"
+        snapshot_filename = f"frame_{frame_number}.png"
         snapshot_path = os.path.join(output_folder, images_folder, snapshot_filename)
         cv2.imwrite(snapshot_path, processed_frame)
         

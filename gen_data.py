@@ -83,16 +83,20 @@ def overlay_logos(frame, logos, max_logos=3):
 # Process video
 cap = cv2.VideoCapture(video_path)
 frame_number = 0
-snapshot_interval = 300  # Capture one frame every 300 frames
+total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+# Define range for random frame selection
+frame_range = 40  # Number of frames to randomly select
+selected_frames = sorted(random.sample(range(total_frames), frame_range))
 
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
 
-    if frame_number % snapshot_interval == 0:
+    if frame_number in selected_frames:
         # Prepare to overlay multiple logos
-        num_logos = random.randint(1, 3)  # Random number of logos per frame, adjust as needed
+        num_logos = 1
         processed_frame, bboxes, class_ids = overlay_logos(frame, logo_files, num_logos)
         
         # Save snapshot

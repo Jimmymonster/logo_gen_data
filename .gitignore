@@ -7,4 +7,3 @@ output-temp/
 __pycache__/
 old_folder/
 **.json
-**.txt

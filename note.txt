@@ -1,0 +1,1 @@
+http://{ip}/api/projects/{project id}/export?exportType=JSON&download_all_tasks=true

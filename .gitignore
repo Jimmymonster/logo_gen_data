@@ -3,5 +3,8 @@ old_images/
 result/
 video/
 output/
+output-temp/
 __pycache__/
 old_folder/
+**.json
+**.txt

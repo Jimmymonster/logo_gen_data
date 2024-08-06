@@ -6,4 +6,5 @@ output/
 output-temp/
 __pycache__/
 old_folder/
+occulusion_images/
 **.json

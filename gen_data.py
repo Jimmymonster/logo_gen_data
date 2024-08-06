@@ -48,19 +48,27 @@ def overlay_logos(frame, logos, max_logos=3):
     existing_bboxes = []
     bboxes = []
     class_ids = []
+    global frame_range
+    global logoIndex
 
     for _ in range(min(max_logos, len(logos))):
         logo_folder, logo_file = random.choice(logo_files)
         logo_class_id = class_list.index(os.path.basename(logo_folder))
         logo_path = os.path.join(logo_folder, logo_file)
         logo = Image.open(logo_path).convert("RGBA")
-        aug_logo = augment_logo(logo)
+        aug_logo = augment_logo(logo,frame_range,logoIndex)
+        logoIndex+=1
         logo_width, logo_height = aug_logo.size
         
-        x_padding = random.randint(5, 10)  
-        y_padding = random.randint(5, 10)  
-        random_pos_x = random.randint(0, 5)
-        random_pos_y = random.randint(0, 5)
+        # x_padding = random.randint(5, 10)  
+        # y_padding = random.randint(5, 10)  
+        # random_pos_x = random.randint(0, 5)
+        # random_pos_y = random.randint(0, 5)
+
+        x_padding = 0
+        y_padding = 0 
+        random_pos_x = 0
+        random_pos_y = 0
         
         # Try to find a non-overlapping position
         for _ in range(100):  # Try 100 times to avoid infinite loops
@@ -87,6 +95,7 @@ total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 # Define range for random frame selection
 frame_range = 50  # Number of frames to randomly select
+logoIndex = 0
 selected_frames = sorted(random.sample(range(total_frames), frame_range))
 
 while cap.isOpened():

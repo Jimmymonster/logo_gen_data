@@ -1,1 +1,1 @@
-http://{ip}/api/projects/{project id}/export?exportType=JSON&download_all_tasks=true
+http://ip/api/projects/projectid/export?exportType=JSON&download_all_tasks=true

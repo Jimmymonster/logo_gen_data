@@ -11,16 +11,27 @@ def random_resize(image, scale_range=(0.9, 1.5)):
 
 def resolution_down(image, max_resolution=(80, 80)):
     original_width, original_height = image.size
-    scale = min(max_resolution[0] / original_width, max_resolution[1] / original_height)
+    scale = max(max_resolution[0] / original_width, max_resolution[1] / original_height)
     new_width = int(original_width * scale)
     new_height = int(original_height * scale)
     return image.resize((new_width, new_height), Image.LANCZOS)
 
 def add_noise(image_pil: Image.Image, min_noise_level: float = 25.0, max_noise_level: float = 75.0) -> Image.Image:
+    # Ensure the image is in RGBA mode
+    if image_pil.mode != 'RGBA':
+        image_pil = image_pil.convert('RGBA')
+    # Convert image to numpy array
     image_np = np.array(image_pil)
+    # Extract RGB and alpha channels
+    rgb = image_np[:, :, :3]
+    alpha = image_np[:, :, 3]
+    # Add noise only to the RGB channels
     noise_level = random.uniform(min_noise_level, max_noise_level)
-    noise = np.random.normal(0, noise_level, image_np.shape)
-    noisy_image_np = np.clip(image_np + noise, 0, 255).astype(np.uint8)
+    noise = np.random.normal(0, noise_level, rgb.shape)
+    noisy_rgb = np.clip(rgb + noise, 0, 255).astype(np.uint8)
+    # Combine noisy RGB with the original alpha channel
+    noisy_image_np = np.dstack((noisy_rgb, alpha))
+    # Convert back to PIL Image
     noisy_image_pil = Image.fromarray(noisy_image_np, 'RGBA')
     return noisy_image_pil
 
@@ -197,7 +208,7 @@ def random_color(img: Image.Image) -> Image.Image:
     return img
 
 def augment_logo(image,frame_range,logoIndex):
-    image = resolution_down(image, (200,200))
+    image = resolution_down(image, (90,90))
 
     # image = random_resize(image)
 

@@ -1,3 +1,6 @@
+# Notice
+There is a better version of this repo easy to use here --> https://github.com/Jimmymonster/logo-gen_upgraded
+ 
 # Project Description
 This project generate logo data. I just copy the logo and place it at random frame on the video!!!
 
